@@ -51,6 +51,34 @@ for acts in act:
                      (acts[2][0] + delta_x, acts[2][1] + delta_y),
                      (acts[3][0] - delta_x, acts[3][1] + delta_y)])  # 左侧(画面右侧)下界两点
 
+
+# 该函数用于检测点是否在平行四边形内
+# point为点坐标,格式为(x,y)
+# act_side为"left"或"right",该参数用于确定列表
+# act_number为动作编号(自0开始)
+def detect_point(point, act_side, act_number):
+    detect = 0
+    if act_side == "left":
+        act_triangle_w = act_left[act_number][0][0] - act_left[act_number][1][0]  # 动作三角形参数(详见图片)
+        act_triangle_h = act_left[act_number][1][1] - act_left[act_number][0][1]
+        point_triangle_w = act_left[act_number][0][0] - point[0]
+        point_triangle_h = act_left[act_number][0][1] - point[1]
+        boundary = point_triangle_w / act_triangle_w * act_triangle_h
+        if boundary <= point_triangle_h <= boundary+2*delta_y and act_left[act_number][1][0] <= point[0] <= act_left[act_number][0][0]:
+            detect = 1
+
+    elif act_side == "right":
+        act_triangle_w = act_right[act_number][1][0] - act_right[act_number][0][0]  # 动作三角形参数(详见图片)
+        act_triangle_h = act_right[act_number][1][1] - act_right[act_number][0][1]
+        point_triangle_w = point[0] - act_right[act_number][0][0]
+        point_triangle_h = point[1] - act_right[act_number][0][1]
+        boundary = point_triangle_w / act_triangle_w * act_triangle_h
+        if boundary <= point_triangle_h <= boundary+2*delta_y and act_right[act_number][0][0] <= point[0] <= act_right[act_number][1][0]:
+            detect = 1
+
+    return detect
+
+
 if not cap.isOpened():
     cap = cv.VideoCapture(0)
 if not cap.isOpened():
@@ -113,51 +141,21 @@ while cv.waitKey(1) < 0:
     freq = cv.getTickFrequency() / 1000
     cv.putText(frame, '%.2fms' % (t / freq), (10, 20), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
 
-"""""""""
-    # 识别动作关键位置
-    # 此处需要添加关键部位序号,下方判定条件亦然
-    if points[2] and points[5]:
-        if (act_right[act_number][0][0] <= points[2][0] <= act_right[act_number][1][0] and act_right[act_number][0][
-            1] <= points[2][1] <= act_right[act_number][3][1]) and \
-                (act_left[act_number][1][0] <= points[5][0] <= act_left[act_number][0][0] and act_left[act_number][0][
-                    1] <= points[5][1] <= act_left[act_number][3][1]):
-            cv.rectangle(frame, (0, 0), (640, 480), (0, 255, 0), thickness=15)
-            if act_number < len(act) - 1:
+    # 调用detect_point()检测点是否在阈值允许的范围内,若在则显示绿色方框并进入下一个动作
+    # 此处示例程序关键点仅有LShoulder(points[5])与RShoulder(points[2])
+    if act_number <= len(act) - 1:
+        if points[2] and points[5]:
+            detect_right = detect_point(points[2], "right", act_number)
+            detect_left = detect_point(points[5], "left", act_number)
+            if detect_left and detect_right:
+                cv.rectangle(frame, (0, 0), (640, 480), (0, 255, 0), thickness=15)
                 act_number += 1
-            else:
+            if act_number == len(act):
                 print("Finish!")
-                # break
-"""""""""
+                break
 
     cv.imshow('Video Tutorial', frame)
 
 
-# 检测点是否在平行四边形内
-def detect_point(point, act_side, act_number):  # act_side为"left"或"right",该参数用于确定列表
-    detect_order = [(1, 0), (3, 2)]
-    detect_left = 0  # 检测左右动作 0为不符合,1为符合
-    detect_right = 0
-    if act_side == "left":
-        for i in detect_order:
-            a, b = i
-            act_triangle_w = act_left[act_number][0][0] - act_left[act_number][1][0]  # 动作三角形参数(详见图片)
-            act_triangle_h = act_left[act_number][1][1] - act_left[act_number][0][1]
-            point_triangle_w = point[0] - act_left[act_number][b][0]
-            point_triangle_h = point[1] - act_left[act_number][b][1]
-            boundary = point_triangle_w / act_triangle_w * act_triangle_h
-            if boundary <= point_triangle_h <= boundary+2*delta_y and act_left[act_number][1][0] <= point[0] <= act_left[act_number][0][0]:
-                detect_right = 1
 
-    elif act_side == "right":
-        for i in detect_order:
-            a, b = i
-            act_triangle_w = act_right[act_number][1][0] - act_right[act_number][0][0]  # 动作三角形参数(详见图片)
-            act_triangle_h = act_right[act_number][1][1] - act_right[act_number][0][1]
-            point_triangle_w = point[0] - act_right[act_number][b][0]
-            point_triangle_h = point[1] - act_right[act_number][b][1]
-            boundary = point_triangle_w / act_triangle_w * act_triangle_h
-            if boundary <= point_triangle_h <= boundary+2*delta_y and act_right[act_number][0][0] <= point[0] <= act_right[act_number][1][0]:
-                detect_right = 1
-
-    return detect_left, detect_right
 
