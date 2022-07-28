@@ -70,6 +70,21 @@ point_triangle_h = point[1] - act_left[act_number][b][1]
 
 当point_triangle_h >= (point_triangle_w / act_triangle_w) * act_triangle_h + 2*delta_y时,点位于下界内
 
-函数返回值为detect_left, detect_right(界内为1,界外为0)
+函数返回值为detect_result(界内为1,界外为0)
 
-
+### 2.4 连续动作检测
+此处设置的关键点为左右肩膀,即points[5]与points[2],调用detect_point()检测点是否在阈值允许的范围内,若在则显示绿色方框并进入下一个动作.
+```
+while cv.waitKey(1) < 0:
+......
+    if act_number <= len(act) - 1:
+        if points[2] and points[5]:
+            detect_right = detect_point(points[2], "right", act_number)
+            detect_left = detect_point(points[5], "left", act_number)
+            if detect_left and detect_right:
+                cv.rectangle(frame, (0, 0), (640, 480), (0, 255, 0), thickness=15)
+                act_number += 1
+            if act_number == len(act):
+                print("Finish!")
+                break
+```

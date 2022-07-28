@@ -76,7 +76,7 @@ def detect_point(point, act_side, act_number):
         if boundary <= point_triangle_h <= boundary+2*delta_y and act_right[act_number][0][0] <= point[0] <= act_right[act_number][1][0]:
             detect = 1
 
-    return detect
+    return detect_result
 
 
 if not cap.isOpened():
@@ -153,6 +153,7 @@ while cv.waitKey(1) < 0:
             if act_number == len(act):
                 print("Finish!")
                 break
+
 
     cv.imshow('Video Tutorial', frame)
 
